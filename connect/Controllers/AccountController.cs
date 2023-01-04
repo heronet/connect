@@ -28,17 +28,17 @@ public class AccountController : BaseController
     /// <summary>
     /// POST api/account/register
     /// </summary>
-    /// <param name="registerDTO"></param>
+    /// <param name="registerDto"></param>
     /// <returns><see cref="UserAuthDto" /></returns>
     [HttpPost("register")]
-    public async Task<ActionResult<UserAuthDto>> RegisterUser(RegisterDto registerDTO)
+    public async Task<ActionResult<UserAuthDto>> RegisterUser(RegisterDto registerDto)
     {
         var User = new User
         {
-            UserName = registerDTO.Email.ToLower().Trim(),
-            Email = registerDTO.Email.ToLower().Trim(),
+            UserName = registerDto.Email.ToLower().Trim(),
+            Email = registerDto.Email.ToLower().Trim(),
         };
-        var result = await _userManager.CreateAsync(User, password: registerDTO.Password);
+        var result = await _userManager.CreateAsync(User, password: registerDto.Password);
         if (!result.Succeeded) return BadRequest(result);
 
         var addToRoleResult = await _userManager.AddToRoleAsync(User, "Member");

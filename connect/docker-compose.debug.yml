@@ -1,6 +1,6 @@
 # Please refer https://aka.ms/HTTPSinContainer on how to setup an https developer certificate for your ASP .NET Core service.
 
-version: '3.4'
+version: "3.4"
 
 services:
   connect:
@@ -8,11 +8,14 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+    command: dotnet watch run --urls=http://+:5000
     ports:
       - 5000:5000
-      - 443:443
-      - 80:80
+      # - 443:443
+      # - 80:8080
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - DATABASE_URL=postgres://sirat:secret@pgsqldev:5432/connect
+      - JWT_SECRET=DGhkd6bN59Awobzr7yvD
     volumes:
       - ~/.vsdbg:/remote_debugger:rw

@@ -1,6 +1,7 @@
 using System.Text;
 using connect.Data;
 using connect.Models;
+using connect.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -18,36 +19,15 @@ public static class ServiceExtensions
     /// <returns>A reference to this object after the operation has completed</returns>
     public static IServiceCollection AddCustomServices(this IServiceCollection services, IConfiguration configuration)
     {
-        var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? configuration["JWT_SECRET"];
+        var uriString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? configuration.GetConnectionString("DATABASE_URL");
+        var uri = new Uri(uriString);
+        var db = uri.AbsolutePath.Trim('/');
+        var user = uri.UserInfo.Split(':')[0];
+        var passwd = uri.UserInfo.Split(':')[1];
+        var port = uri.Port > 0 ? uri.Port : 5432;
+        var dbConnectionString = string.Format("Server={0};Database={1};User Id={2};Password={3};Port={4}", uri.Host, db, user, passwd, port);
 
-        string dbConnectionString;
-        string jwtSecret;
-
-        // Depending on if in development or production, use either Server-provided
-        // connection string, or development connection string from env var.
-        if (env == "Development")
-        {
-            // Use connection string from file.
-            dbConnectionString = configuration.GetConnectionString("PostgreSQL");
-            jwtSecret = configuration["JWT_SECRET"];
-        }
-        else
-        {
-            jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
-            // Database
-            // Use connection string provided at runtime.
-            var connUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-            var host = Environment.GetEnvironmentVariable("HostName");
-
-            var uriString = connUrl;
-            var uri = new Uri(uriString);
-            var db = uri.AbsolutePath.Trim('/');
-            var user = uri.UserInfo.Split(':')[0];
-            var passwd = uri.UserInfo.Split(':')[1];
-            var port = uri.Port > 0 ? uri.Port : 5432;
-            dbConnectionString = string.Format("Server={0};Database={1};User Id={2};Password={3};Port={4}", uri.Host, db, user, passwd, port);
-
-        }
 
         services.AddDbContext<ApplicationDbContext>(options =>
         {
@@ -67,8 +47,7 @@ public static class ServiceExtensions
           .AddRoleManager<RoleManager<IdentityRole>>()
           .AddRoleValidator<RoleValidator<IdentityRole>>();
 
-        services
-        .AddAuthentication(options =>
+        services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -83,6 +62,8 @@ public static class ServiceExtensions
                 ValidateIssuer = false
             };
         });
+        services.AddScoped<TokenService>();
+
         return services;
     }
 }
