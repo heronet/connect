@@ -71,7 +71,7 @@ public static class ServiceExtensions
                     // If the request is for our hub...
                     var path = context.HttpContext.Request.Path;
                     if (!string.IsNullOrEmpty(accessToken) &&
-                        (path.StartsWithSegments("/hubs/chat")))
+                        (path.StartsWithSegments("/hubs")))
                     {
                         // Read the token out of the query string
                         context.Token = accessToken;
@@ -85,7 +85,10 @@ public static class ServiceExtensions
         {
             options.AddPolicy("any", policy =>
             {
-                policy.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:4200").AllowCredentials();
+                policy.AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .WithOrigins("http://localhost:4200")
+                    .AllowCredentials();
             });
         });
         return services;
