@@ -58,7 +58,9 @@ namespace connect.Data.Migrations
                 name: "Chats",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    LastMessage = table.Column<string>(type: "text", nullable: true),
+                    Type = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -201,9 +203,9 @@ namespace connect.Data.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Text = table.Column<string>(type: "text", nullable: true),
+                    Read = table.Column<bool>(type: "boolean", nullable: false),
                     UserId = table.Column<string>(type: "text", nullable: true),
-                    ChatId = table.Column<Guid>(type: "uuid", nullable: false),
-                    LastMessageId = table.Column<Guid>(type: "uuid", nullable: false)
+                    ChatId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -219,12 +221,6 @@ namespace connect.Data.Migrations
                         principalTable: "Chats",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Message_Message_LastMessageId",
-                        column: x => x.LastMessageId,
-                        principalTable: "Message",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.InsertData(
@@ -232,8 +228,8 @@ namespace connect.Data.Migrations
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "a7f4b1e8-eb23-4e25-b5f4-84b8c769279f", null, "Admin", "ADMIN" },
-                    { "b615a07f-a19c-4f3d-9b8d-c85f6f2a6d95", null, "Member", "MEMBER" }
+                    { "68d60111-6adc-4dd8-84b3-c47524fb6a62", null, "Member", "MEMBER" },
+                    { "bc3a14a5-fb31-4055-8c03-23a5c0178a41", null, "Admin", "ADMIN" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -282,11 +278,6 @@ namespace connect.Data.Migrations
                 name: "IX_Message_ChatId",
                 table: "Message",
                 column: "ChatId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Message_LastMessageId",
-                table: "Message",
-                column: "LastMessageId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Message_UserId",

@@ -65,13 +65,13 @@ namespace connect.Data.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "b615a07f-a19c-4f3d-9b8d-c85f6f2a6d95",
+                            Id = "68d60111-6adc-4dd8-84b3-c47524fb6a62",
                             Name = "Member",
                             NormalizedName = "MEMBER"
                         },
                         new
                         {
-                            Id = "a7f4b1e8-eb23-4e25-b5f4-84b8c769279f",
+                            Id = "bc3a14a5-fb31-4055-8c03-23a5c0178a41",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -261,6 +261,12 @@ namespace connect.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("LastMessage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.ToTable("Chats");
@@ -275,8 +281,8 @@ namespace connect.Data.Migrations
                     b.Property<Guid>("ChatId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("LastMessageId")
-                        .HasColumnType("uuid");
+                    b.Property<bool>("Read")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Text")
                         .HasColumnType("text");
@@ -287,8 +293,6 @@ namespace connect.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ChatId");
-
-                    b.HasIndex("LastMessageId");
 
                     b.HasIndex("UserId");
 
@@ -376,19 +380,11 @@ namespace connect.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("connect.Models.Message", "LastMessage")
-                        .WithMany()
-                        .HasForeignKey("LastMessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("connect.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId");
 
                     b.Navigation("Chat");
-
-                    b.Navigation("LastMessage");
 
                     b.Navigation("User");
                 });

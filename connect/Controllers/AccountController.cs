@@ -100,7 +100,7 @@ public class AccountController : BaseController
     {
         return new UserAuthDto
         {
-            Name = User.UserName,
+            Email = User.Email,
             Token = await _tokenService.GenerateToken(User),
             Id = User.Id,
             Roles = roles
