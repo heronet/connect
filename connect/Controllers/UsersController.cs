@@ -71,4 +71,27 @@ public class UsersController : BaseController
         }
         return BadRequest("Connection error");
     }
+    [HttpGet("connected/{recipientId}")]
+    public async Task<ActionResult> GetChatId(string recipientId)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        if (userId == recipientId) return BadRequest("Cannot connect to self");
+
+        var user = await _userManager.FindByIdAsync(userId);
+        var recipient = await _userManager.FindByIdAsync(recipientId);
+        if (recipient == null) return BadRequest("Target does not exist");
+
+        var chat = await _dbContext.Chats
+            .Include(c => c.Users)
+            .FirstOrDefaultAsync(c => c.Users.Contains(user) && c.Users.Contains(recipient) && c.Users.Count <= 2);
+        if (chat == null)
+            return BadRequest("Connection doesnot exists");
+
+        var chatDto = new ChatDto
+        {
+            Id = chat.Id
+        };
+
+        return Ok(chatDto);
+    }
 }

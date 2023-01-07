@@ -22,8 +22,8 @@ public class ChatHub : Hub
 
     public async override Task OnConnectedAsync()
     {
-        var username = Context.User.FindFirst(ClaimTypes.Name).Value;
-        await Clients.All.SendAsync("connected", username);
+        var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        await Clients.User(userId).SendAsync("Connected", userId);
     }
     public async Task GetChats()
     {
@@ -81,8 +81,8 @@ public class ChatHub : Hub
     }
     public async override Task OnDisconnectedAsync(Exception exception)
     {
-        var username = Context.User.FindFirst(ClaimTypes.Name).Value;
-        await Clients.All.SendAsync("Disconnected", username);
+        var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        await Clients.User(userId).SendAsync("Disconnected", userId);
         await base.OnDisconnectedAsync(exception);
     }
     private MessageDto MessageToDto(Message message)
