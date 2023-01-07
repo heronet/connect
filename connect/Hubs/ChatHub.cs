@@ -66,9 +66,11 @@ public class ChatHub : Hub
             Text = messageDto.Text,
             Read = false,
             User = user,
+            UserName = user.UserName
         };
         chat.Messages.Add(message);
         chat.LastMessage = message.Text;
+        chat.LastMessageSender = user.UserName;
         _dbContext.Chats.Update(chat);
         if (await _dbContext.SaveChangesAsync() > 0)
         {
@@ -92,6 +94,7 @@ public class ChatHub : Hub
             Id = message.Id,
             Text = message.Text,
             Read = message.Read,
+            UserName = message.UserName,
             UserId = message.UserId,
             ChatId = message.ChatId
         };
@@ -102,6 +105,7 @@ public class ChatHub : Hub
         {
             Id = chat.Id,
             LastMessage = chat.LastMessage,
+            LastMessageSender = chat.LastMessageSender,
             Type = chat.Type,
             Users = chat.Users.Select(u => UserToDto(u)).ToList(),
             Messages = chat.Messages?.Select(m => MessageToDto(m)).ToList()
@@ -111,7 +115,9 @@ public class ChatHub : Hub
     {
         return new UserDto
         {
-            Email = user.Email
+            Email = user.Email,
+            UserName = user.UserName,
+            Id = user.Id
         };
     }
 }
