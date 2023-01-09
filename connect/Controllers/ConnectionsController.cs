@@ -44,7 +44,7 @@ public class ConnectionsController : BaseController
 
         return Ok(userDtos);
     }
-    [HttpPatch("connect")]
+    [HttpPost("connect")]
     public async Task<ActionResult> ConnectUser(ConnectUserDto connectUserDto)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
