@@ -6,15 +6,16 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace connect.Controllers;
 
 [Authorize]
-public class UsersController : BaseController
+public class ConnectionsController : BaseController
 {
     private readonly UserManager<User> _userManager;
     private readonly ApplicationDbContext _dbContext;
-    public UsersController(UserManager<User> userManager, ApplicationDbContext dbContext)
+    public ConnectionsController(UserManager<User> userManager, ApplicationDbContext dbContext)
     {
         _dbContext = dbContext;
         _userManager = userManager;
@@ -43,10 +44,11 @@ public class UsersController : BaseController
 
         return Ok(userDtos);
     }
-    [HttpGet("connect/{recipientId}")]
-    public async Task<ActionResult> ConnectUser(string recipientId)
+    [HttpPatch("connect")]
+    public async Task<ActionResult> ConnectUser(ConnectUserDto connectUserDto)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        var recipientId = connectUserDto.RecipientId;
         if (userId == recipientId) return BadRequest("Cannot connect to self");
 
         var user = await _userManager.FindByIdAsync(userId);
@@ -62,7 +64,8 @@ public class UsersController : BaseController
         chat = new Chat
         {
             Messages = new List<Message>(),
-            Users = new List<User> { user, recipient }
+            Users = new List<User> { user, recipient },
+            Titles = new Dictionary<string, string> { { userId, recipient.Name }, { recipientId, user.Name } }
         };
         _dbContext.Chats.Add(chat);
         if (await _dbContext.SaveChangesAsync() > 0)
@@ -71,6 +74,37 @@ public class UsersController : BaseController
         }
         return BadRequest("Connection error");
     }
+
+    [HttpPatch("rename")]
+    public async Task<ActionResult> RenameChat(RenameChatDto renameChatDto)
+    {
+        var chatId = renameChatDto.ChatId;
+        var chatName = renameChatDto.ChatName;
+
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return BadRequest("User does not exist");
+
+        var chat = await _dbContext.Chats
+            .Include(c => c.Users)
+            .FirstOrDefaultAsync(c => c.Id == chatId);
+
+        if (chat == null)
+            return BadRequest("Connection already exists");
+        if (!chat.Users.Contains(user))
+            return BadRequest("You are not permitted to rename the chat");
+
+        chat.Titles[userId] = chatName;
+        _dbContext.Chats.Update(chat);
+
+        if (await _dbContext.SaveChangesAsync() > 0)
+        {
+            return Ok(new ChatDto { Title = chatName });
+        }
+        return BadRequest("Chat rename error");
+    }
+
     [HttpGet("connected/{recipientId}")]
     public async Task<ActionResult> GetChatId(string recipientId)
     {

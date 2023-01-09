@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using connect.Data;
@@ -12,9 +13,11 @@ using connect.Data;
 namespace connect.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230109203940_UpdateUserChatMessage")]
+    partial class UpdateUserChatMessage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -67,13 +70,13 @@ namespace connect.Data.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "80ed0a70-ef64-4776-87ce-d7a30dd4a640",
+                            Id = "53a82a1b-da01-4159-abb3-d0239a76dd75",
                             Name = "Member",
                             NormalizedName = "MEMBER"
                         },
                         new
                         {
-                            Id = "30800b2b-e572-4c80-b1c2-ba12882736ed",
+                            Id = "1bfbb5cb-6335-4bed-a17b-b7218835a2f5",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -297,9 +300,6 @@ namespace connect.Data.Migrations
 
                     b.Property<string>("Text")
                         .HasColumnType("text");
-
-                    b.Property<DateTime>("Time")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UserId")
                         .HasColumnType("text");

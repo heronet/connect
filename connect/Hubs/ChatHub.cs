@@ -34,7 +34,7 @@ public class ChatHub : Hub
             .Include(c => c.Users)
             .Where(c => c.Users.Contains(user))
             .ToListAsync();
-        var chatDtos = chats.Select(c => ChatToDto(c)).ToList();
+        var chatDtos = chats.Select(c => ChatToDto(c, userId)).ToList();
         await Clients.User(userId).SendAsync("ReceivedChats", chatDtos);
     }
     public async Task GetChat(Guid id)
@@ -45,7 +45,8 @@ public class ChatHub : Hub
             .Include(c => c.Messages)
             .FirstOrDefaultAsync();
         if (chat == null) throw new HubException("Chat does not exists");
-        var chatDto = ChatToDto(chat);
+        var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        var chatDto = ChatToDto(chat, userId);
         await Clients.Users(chat.Users.Select(u => u.Id)).SendAsync("ReceivedChat", chatDto);
     }
 
@@ -66,11 +67,11 @@ public class ChatHub : Hub
             Text = messageDto.Text,
             Read = false,
             User = user,
-            UserName = user.UserName
+            SenderName = user.Name
         };
         chat.Messages.Add(message);
         chat.LastMessage = message.Text;
-        chat.LastMessageSender = user.UserName;
+        chat.LastMessageSender = user.Name;
         _dbContext.Chats.Update(chat);
         if (await _dbContext.SaveChangesAsync() > 0)
         {
@@ -84,6 +85,9 @@ public class ChatHub : Hub
     public async override Task OnDisconnectedAsync(Exception exception)
     {
         var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        var user = await _userManager.FindByIdAsync(userId);
+        user.LastOnline = DateTime.UtcNow;
+        await _userManager.UpdateAsync(user);
         await Clients.User(userId).SendAsync("Disconnected", userId);
         await base.OnDisconnectedAsync(exception);
     }
@@ -94,16 +98,18 @@ public class ChatHub : Hub
             Id = message.Id,
             Text = message.Text,
             Read = message.Read,
-            UserName = message.UserName,
+            Time = message.Time,
+            SenderName = message.SenderName,
             UserId = message.UserId,
             ChatId = message.ChatId
         };
     }
-    private ChatDto ChatToDto(Chat chat)
+    private ChatDto ChatToDto(Chat chat, string userId)
     {
         return new ChatDto
         {
             Id = chat.Id,
+            Title = chat.Titles[userId],
             LastMessage = chat.LastMessage,
             LastMessageSender = chat.LastMessageSender,
             Type = chat.Type,

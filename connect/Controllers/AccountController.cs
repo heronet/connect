@@ -37,6 +37,7 @@ public class AccountController : BaseController
         {
             UserName = registerDto.Email.ToLower().Trim(),
             Email = registerDto.Email.ToLower().Trim(),
+            Name = registerDto.Name.Trim()
         };
         var result = await _userManager.CreateAsync(User, password: registerDto.Password);
         if (!result.Succeeded) return BadRequest(result);
