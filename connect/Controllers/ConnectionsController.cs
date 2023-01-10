@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 
 namespace connect.Controllers;
 
@@ -24,7 +23,7 @@ public class ConnectionsController : BaseController
     public async Task<ActionResult> GetUsers()
     {
         var users = await _userManager.Users
-            .Select(u => new UserDto { Email = u.Email, Id = u.Id })
+            .Select(u => new UserDto { Email = u.Email, Id = u.Id, Name = u.Name })
             .ToListAsync();
         return Ok(users);
     }
