@@ -87,7 +87,7 @@ public static class ServiceExtensions
             {
                 policy.AllowAnyHeader()
                     .AllowAnyMethod()
-                    .WithOrigins("http://localhost:4200")
+                    .WithOrigins(Environment.GetEnvironmentVariable("CORS_ORIGIN") ?? configuration["CORS_ORIGIN"])
                     .AllowCredentials();
             });
         });
