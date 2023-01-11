@@ -42,7 +42,7 @@ public class ChatHub : Hub
         var chat = await _dbContext.Chats
             .Where(c => c.Id == id)
             .Include(c => c.Users)
-            .Include(c => c.Messages)
+            .Include(c => c.Messages.OrderBy(m => m.Time))
             .FirstOrDefaultAsync();
         if (chat == null) throw new HubException("Chat does not exists");
         var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier).Value;
