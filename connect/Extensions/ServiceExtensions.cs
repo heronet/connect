@@ -15,12 +15,11 @@ public static class ServiceExtensions
     /// Extension Method to Add Configuration Services
     /// </summary>
     /// <param name="services"></param>
-    /// <param name="configuration"></param>
     /// <returns>A reference to this object after the operation has completed</returns>
-    public static IServiceCollection AddCustomServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddCustomServices(this IServiceCollection services)
     {
-        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? configuration["JWT_SECRET"];
-        var uriString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? configuration.GetConnectionString("DATABASE_URL");
+        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+        var uriString = Environment.GetEnvironmentVariable("DATABASE_URL");
         var uri = new Uri(uriString);
         var db = uri.AbsolutePath.Trim('/');
         var user = uri.UserInfo.Split(':')[0];
@@ -87,7 +86,7 @@ public static class ServiceExtensions
             {
                 policy.AllowAnyHeader()
                     .AllowAnyMethod()
-                    .WithOrigins(Environment.GetEnvironmentVariable("CORS_ORIGIN") ?? configuration["CORS_ORIGIN"])
+                    .WithOrigins(Environment.GetEnvironmentVariable("CORS_ORIGIN"))
                     .AllowCredentials();
             });
         });
