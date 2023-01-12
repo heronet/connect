@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using connect.Data;
@@ -12,9 +13,11 @@ using connect.Data;
 namespace connect.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230112185222_TextToPost")]
+    partial class TextToPost
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -67,13 +70,13 @@ namespace connect.Data.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "408ac361-fd51-4a06-af9d-1da87f2d13a8",
+                            Id = "48674317-1253-4747-817a-8e2a63d42c09",
                             Name = "Member",
                             NormalizedName = "MEMBER"
                         },
                         new
                         {
-                            Id = "b23bc01c-b5ed-436b-b330-844fd944db2f",
+                            Id = "d9e3a172-1754-44eb-87f7-35d08e3200e3",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -390,9 +393,6 @@ namespace connect.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Text")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Title")
                         .HasColumnType("text");
 
                     b.Property<string>("UserId")
