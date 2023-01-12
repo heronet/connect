@@ -38,7 +38,7 @@ public class ConnectionsController : BaseController
             .Include(c => c.Users)
             .Where(c => c.Users.Contains(user) && c.Users.Count <= 2)
             .Select(c => c.Users.FirstOrDefault(u => u.Id != userId))
-            .Select(u => new UserDto { Id = u.Id, Email = u.Email })
+            .Select(u => new UserDto { Id = u.Id, Email = u.Email, Name = u.Name })
             .ToListAsync();
 
         return Ok(userDtos);
