@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace connect.Controllers;
 
@@ -35,13 +36,19 @@ public class PostsController : BaseController
     [HttpPost]
     public async Task<ActionResult> AddPost(PostDto postDto)
     {
+        if (postDto.Text.IsNullOrEmpty())
+            return BadRequest("Post cannot be blank");
         var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null) return BadRequest("User does not exist");
         var post = new Post
         {
-            Text = postDto.Text,
-            User = user
+            Title = postDto.Text.Trim().Substring(0, Math.Min(40, postDto.Text.Trim().Length)),
+            Text = postDto.Text.Trim(),
+            User = user,
+            Likes = new List<Like>(),
+            Comments = new List<Comment>(),
+            Photos = new List<Photo>()
         };
         _dbContext.Posts.Add(post);
         if (await _dbContext.SaveChangesAsync() > 0)
@@ -80,8 +87,8 @@ public class PostsController : BaseController
             CreatedAt = post.CreatedAt,
             UserId = post.UserId,
             UserName = post.User.Name,
-            LikesCount = post.Likes?.Count ?? 0,
-            CommentsCount = post.Comments?.Count ?? 0
+            LikesCount = post.Likes.Count,
+            CommentsCount = post.Comments.Count
         };
     }
 }
