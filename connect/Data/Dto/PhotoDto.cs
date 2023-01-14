@@ -1,6 +1,6 @@
-namespace connect.Models;
+namespace connect.Data.Dto;
 
-public class Photo
+public class PhotoDto
 {
     public Guid Id { get; set; }
     public string ImageUrl { get; set; }

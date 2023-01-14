@@ -2,6 +2,7 @@ using System.Security.Claims;
 using connect.Data;
 using connect.Data.Dto;
 using connect.Models;
+using connect.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,8 +15,10 @@ public class PostsController : BaseController
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly UserManager<User> _userManager;
-    public PostsController(ApplicationDbContext dbContext, UserManager<User> userManager)
+    private readonly PhotoService _photoService;
+    public PostsController(ApplicationDbContext dbContext, UserManager<User> userManager, PhotoService photoService)
     {
+        _photoService = photoService;
         _dbContext = dbContext;
         _userManager = userManager;
     }
@@ -34,13 +37,31 @@ public class PostsController : BaseController
     }
     [Authorize]
     [HttpPost]
-    public async Task<ActionResult> AddPost(PostDto postDto)
+    public async Task<ActionResult> AddPost([FromForm] PostDto postDto)
     {
         if (postDto.Text.IsNullOrEmpty())
             return BadRequest("Post cannot be blank");
         var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null) return BadRequest("User does not exist");
+
+        // Photo upload
+        if (postDto.UploadPhotos.Count > 5)
+            return BadRequest("Can't add more than 5 photos");
+        var uploadedPhotos = new List<Photo>();
+        foreach (var photo in postDto.UploadPhotos)
+        {
+            var photoResult = await _photoService.AddPhotoAsync(photo);
+            if (photoResult.Error != null)
+                return BadRequest(photoResult.Error.Message);
+            var newPhoto = new Photo
+            {
+                ImageUrl = photoResult.SecureUrl.AbsoluteUri,
+                PublicId = photoResult.PublicId
+            };
+            uploadedPhotos.Add(newPhoto);
+        }
+
         var post = new Post
         {
             Title = postDto.Text.Trim().Substring(0, Math.Min(40, postDto.Text.Trim().Length)),
@@ -48,7 +69,7 @@ public class PostsController : BaseController
             User = user,
             Likes = new List<Like>(),
             Comments = new List<Comment>(),
-            Photos = new List<Photo>()
+            Photos = uploadedPhotos
         };
         _dbContext.Posts.Add(post);
         if (await _dbContext.SaveChangesAsync() > 0)
@@ -77,6 +98,15 @@ public class PostsController : BaseController
             return Ok(new { Message = $"Post {post.Id} deleted" });
         return BadRequest("Deleting Post Failed");
     }
+    private PhotoDto PhotoToDto(Photo photo)
+    {
+        return new PhotoDto
+        {
+            Id = photo.Id,
+            ImageUrl = photo.ImageUrl,
+            PublicId = photo.PublicId
+        };
+    }
     private PostDto PostToDto(Post post)
     {
         return new PostDto
@@ -88,7 +118,8 @@ public class PostsController : BaseController
             UserId = post.UserId,
             UserName = post.User.Name,
             LikesCount = post.Likes.Count,
-            CommentsCount = post.Comments.Count
+            CommentsCount = post.Comments.Count,
+            Photos = post.Photos.Select(p => PhotoToDto(p)).ToList()
         };
     }
 }

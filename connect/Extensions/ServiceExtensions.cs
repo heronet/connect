@@ -90,6 +90,7 @@ public static class ServiceExtensions
                     .AllowCredentials();
             });
         });
+        services.AddScoped<PhotoService>();
         return services;
     }
 }
