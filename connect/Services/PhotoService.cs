@@ -19,7 +19,7 @@ public class PhotoService
     }
     public async Task<ImageUploadResult> AddPhotoAsync(IFormFile file)
     {
-        int width = 500, height = 500, quality = 50;
+        int quality = 50;
         var uploadResult = new ImageUploadResult();
         if (file.Length > 0)
         {
@@ -27,7 +27,7 @@ public class PhotoService
             var uploadParams = new ImageUploadParams
             {
                 File = new FileDescription(file.FileName, stream),
-                Transformation = new Transformation().Height(height).Width(width).Quality(quality)
+                Transformation = new Transformation().Quality(quality)
             };
             uploadResult = await _cloudinary.UploadAsync(uploadParams);
         }
