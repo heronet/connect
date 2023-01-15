@@ -30,6 +30,7 @@ public class PostsController : BaseController
             .Include(p => p.User)
             .Include(p => p.Likes)
             .Include(p => p.Comments)
+            .Include(p => p.Photos)
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
         var postDtos = posts.Select(p => PostToDto(p));
@@ -39,7 +40,7 @@ public class PostsController : BaseController
     [HttpPost]
     public async Task<ActionResult> AddPost([FromForm] PostDto postDto)
     {
-        if (postDto.Text.IsNullOrEmpty())
+        if (postDto.Text.IsNullOrEmpty() && postDto.UploadPhotos.Count == 0)
             return BadRequest("Post cannot be blank");
         var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
         var user = await _userManager.FindByIdAsync(userId);
@@ -64,8 +65,8 @@ public class PostsController : BaseController
 
         var post = new Post
         {
-            Title = postDto.Text.Trim().Substring(0, Math.Min(40, postDto.Text.Trim().Length)),
-            Text = postDto.Text.Trim(),
+            Title = postDto.Text?.Trim().Substring(0, Math.Min(40, postDto.Text.Trim().Length)) ?? "",
+            Text = postDto.Text?.Trim() ?? "",
             User = user,
             Likes = new List<Like>(),
             Comments = new List<Comment>(),
@@ -93,6 +94,12 @@ public class PostsController : BaseController
             return BadRequest("Post does not exist");
         if (post.UserId != userId)
             return Unauthorized("You cannot delete this post");
+
+        // Delete photos
+        foreach (var photo in post.Photos)
+        {
+            await _photoService.DeletePhotoAsync(photo.PublicId);
+        }
         _dbContext.Posts.Remove(post);
         if (await _dbContext.SaveChangesAsync() > 0)
             return Ok(new { Message = $"Post {post.Id} deleted" });
