@@ -105,6 +105,30 @@ public class PostsController : BaseController
             return Ok(new { Message = $"Post {post.Id} deleted" });
         return BadRequest("Deleting Post Failed");
     }
+    [Authorize]
+    [HttpPut("update/{postId}")]
+    public async Task<ActionResult> UpdatePost(PostDto postDto)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return BadRequest("User does not exist");
+        var post = await _dbContext.Posts
+            .Include(p => p.Likes)
+            .Include(p => p.Comments)
+            .Include(p => p.Photos)
+            .FirstOrDefaultAsync(p => p.Id == postDto.Id);
+        if (post == null)
+            return BadRequest("Post does not exist");
+        if (post.UserId != userId)
+            return Unauthorized("You cannot Edit this post");
+
+        post.Title = postDto.Text?.Trim().Substring(0, Math.Min(40, postDto.Text.Trim().Length)) ?? "";
+        post.Text = postDto.Text?.Trim() ?? "";
+        _dbContext.Posts.Update(post);
+        if (await _dbContext.SaveChangesAsync() > 0)
+            return Ok(PostToDto(post));
+        return BadRequest("Updating Post Failed");
+    }
     private PhotoDto PhotoToDto(Photo photo)
     {
         return new PhotoDto
