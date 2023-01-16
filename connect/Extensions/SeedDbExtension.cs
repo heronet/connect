@@ -5,7 +5,7 @@ namespace connect.Extensions;
 
 public static class SeedDbExtension
 {
-    public static void AddDbSeeder(this WebApplication app)
+    public static void SeedDb(this WebApplication app)
     {
         using (var scope = app.Services.CreateScope())
         {

@@ -14,7 +14,7 @@ builder.Services.AddSignalR();
 
 var app = builder.Build();
 
-app.AddDbSeeder();
+app.SeedDb();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
