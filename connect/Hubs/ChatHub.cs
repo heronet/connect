@@ -47,7 +47,7 @@ public class ChatHub : Hub
         if (chat == null) throw new HubException("Chat does not exists");
         var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier).Value;
         var chatDto = ChatToDto(chat, userId);
-        await Clients.Users(chat.Users.Select(u => u.Id)).SendAsync("ReceivedChat", chatDto);
+        await Clients.Client(Context.ConnectionId).SendAsync("ReceivedChat", chatDto);
     }
 
     public async Task SendMessage(MessageDto messageDto)
