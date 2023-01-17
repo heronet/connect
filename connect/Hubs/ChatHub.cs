@@ -25,30 +25,6 @@ public class ChatHub : Hub
         var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier).Value;
         await Clients.User(userId).SendAsync("Connected", userId);
     }
-    public async Task GetChats()
-    {
-        var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier).Value;
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null) throw new HubException("User does not exist");
-        var chats = await _dbContext.Chats
-            .Include(c => c.Users)
-            .Where(c => c.Users.Contains(user))
-            .ToListAsync();
-        var chatDtos = chats.Select(c => ChatToDto(c, userId)).ToList();
-        await Clients.User(userId).SendAsync("ReceivedChats", chatDtos);
-    }
-    public async Task GetChat(Guid id)
-    {
-        var chat = await _dbContext.Chats
-            .Where(c => c.Id == id)
-            .Include(c => c.Users)
-            .Include(c => c.Messages.OrderBy(m => m.Time))
-            .FirstOrDefaultAsync();
-        if (chat == null) throw new HubException("Chat does not exists");
-        var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier).Value;
-        var chatDto = ChatToDto(chat, userId);
-        await Clients.Client(Context.ConnectionId).SendAsync("ReceivedChat", chatDto);
-    }
 
     public async Task SendMessage(MessageDto messageDto)
     {
@@ -102,28 +78,6 @@ public class ChatHub : Hub
             SenderName = message.SenderName,
             UserId = message.UserId,
             ChatId = message.ChatId
-        };
-    }
-    private ChatDto ChatToDto(Chat chat, string userId)
-    {
-        return new ChatDto
-        {
-            Id = chat.Id,
-            Title = chat.Titles[userId],
-            LastMessage = chat.LastMessage,
-            LastMessageSender = chat.LastMessageSender,
-            Type = chat.Type,
-            Users = chat.Users.Select(u => UserToDto(u)).ToList(),
-            Messages = chat.Messages?.Select(m => MessageToDto(m)).ToList()
-        };
-    }
-    private UserDto UserToDto(User user)
-    {
-        return new UserDto
-        {
-            Email = user.Email,
-            UserName = user.UserName,
-            Id = user.Id
         };
     }
 }
