@@ -69,7 +69,7 @@ public class ConnectionsController : BaseController
         _dbContext.Chats.Add(chat);
         if (await _dbContext.SaveChangesAsync() > 0)
         {
-            return RedirectToAction(nameof(GetConnectedUsers));
+            return Ok(new UserDto { Id = recipientId, Email = recipient.Email, Name = recipient.Name });
         }
         return BadRequest("Connection error");
     }
