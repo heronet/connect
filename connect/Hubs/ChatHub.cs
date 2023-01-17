@@ -48,6 +48,8 @@ public class ChatHub : Hub
         chat.Messages.Add(message);
         chat.LastMessage = message.Text;
         chat.LastMessageSender = user.Name;
+        chat.LastMessageSenderId = user.Id;
+        chat.LastMessageTime = message.Time;
         _dbContext.Chats.Update(chat);
         if (await _dbContext.SaveChangesAsync() > 0)
         {

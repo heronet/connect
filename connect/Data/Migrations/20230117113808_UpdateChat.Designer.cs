@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using connect.Data;
@@ -12,9 +13,11 @@ using connect.Data;
 namespace connect.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230117113808_UpdateChat")]
+    partial class UpdateChat
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -67,13 +70,13 @@ namespace connect.Data.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "5ba69887-4246-41bd-a88a-010c29352720",
+                            Id = "55031bae-a598-4561-bc79-51ee2c433385",
                             Name = "Member",
                             NormalizedName = "MEMBER"
                         },
                         new
                         {
-                            Id = "12d28015-a635-4cc6-9e09-d165b84f6ad8",
+                            Id = "6a7b52f7-a332-44d6-a16f-41181d037e4b",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -271,9 +274,6 @@ namespace connect.Data.Migrations
 
                     b.Property<string>("LastMessageSenderId")
                         .HasColumnType("text");
-
-                    b.Property<DateTime>("LastMessageTime")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Dictionary<string, string>>("Titles")
                         .HasColumnType("hstore");

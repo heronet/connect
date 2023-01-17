@@ -78,6 +78,8 @@ public class ChatsController : BaseController
             Title = chat.Titles[userId],
             LastMessage = chat.LastMessage,
             LastMessageSender = chat.LastMessageSender,
+            LastMessageSenderId = chat.LastMessageSenderId,
+            LastMessageTime = chat.LastMessageTime,
             Type = chat.Type,
             Users = chat.Users.Select(u => UserToDto(u)).ToList(),
             Messages = chat.Messages?.Select(m => MessageToDto(m)).ToList()
