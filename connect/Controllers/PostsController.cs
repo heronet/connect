@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace connect.Controllers;
 
+[Authorize]
 public class PostsController : BaseController
 {
     private readonly ApplicationDbContext _dbContext;
@@ -22,10 +23,12 @@ public class PostsController : BaseController
         _dbContext = dbContext;
         _userManager = userManager;
     }
-
+    [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult> GetPosts()
     {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = await _userManager.FindByIdAsync(userId);
         var posts = await _dbContext.Posts
             .Include(p => p.User)
             .Include(p => p.Likes)
@@ -33,10 +36,9 @@ public class PostsController : BaseController
             .Include(p => p.Photos)
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
-        var postDtos = posts.Select(p => PostToDto(p));
+        var postDtos = posts.Select(p => PostToDto(p, user)).ToList();
         return Ok(postDtos);
     }
-    [Authorize]
     [HttpPost]
     public async Task<ActionResult> AddPost([FromForm] PostDto postDto)
     {
@@ -78,7 +80,6 @@ public class PostsController : BaseController
         return BadRequest("Creating Post Failed");
     }
 
-    [Authorize]
     [HttpDelete("delete/{postId}")]
     public async Task<ActionResult> DeletePost(Guid postId)
     {
@@ -105,8 +106,8 @@ public class PostsController : BaseController
             return Ok(new { Message = $"Post {post.Id} deleted" });
         return BadRequest("Deleting Post Failed");
     }
-    [Authorize]
-    [HttpPut("update/{postId}")]
+
+    [HttpPut("update")]
     public async Task<ActionResult> UpdatePost(PostDto postDto)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
@@ -129,6 +130,58 @@ public class PostsController : BaseController
             return Ok(PostToDto(post));
         return BadRequest("Updating Post Failed");
     }
+
+    [HttpPut("like")]
+    public async Task<ActionResult> LikePost(PostDto postDto)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return BadRequest("User does not exist");
+        var post = await _dbContext.Posts
+            .Include(p => p.Likes)
+            .FirstOrDefaultAsync(p => p.Id == postDto.Id);
+        if (post == null)
+            return BadRequest("Post does not exist");
+        var like = post.Likes
+            .Where(l => l.UserId == userId)
+            .FirstOrDefault();
+        // Like if not liked before
+        if (like != null)
+            return BadRequest("Cannot like twice");
+        like = new Like
+        {
+            User = user,
+            Post = post
+        };
+        post.Likes.Add(like);
+        _dbContext.Posts.Update(post);
+        if (await _dbContext.SaveChangesAsync() > 0)
+            return Ok(new PostDto { Id = post.Id, PostLiked = true });
+        return BadRequest("Like Post Failed");
+    }
+
+    [HttpPut("unlike")]
+    public async Task<ActionResult> UnlikePost(PostDto postDto)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return BadRequest("User does not exist");
+        var post = await _dbContext.Posts
+            .Include(p => p.Likes)
+            .FirstOrDefaultAsync(p => p.Id == postDto.Id);
+        if (post == null)
+            return BadRequest("Post does not exist");
+        var like = post.Likes
+            .Where(l => l.UserId == userId)
+            .FirstOrDefault();
+        if (like == null)
+            return BadRequest("Cannot unlike post");
+        post.Likes.Remove(like);
+        _dbContext.Posts.Update(post);
+        if (await _dbContext.SaveChangesAsync() > 0)
+            return Ok(new PostDto { Id = post.Id, PostLiked = false });
+        return BadRequest("Updating Post Failed");
+    }
     private PhotoDto PhotoToDto(Photo photo)
     {
         return new PhotoDto
@@ -138,8 +191,9 @@ public class PostsController : BaseController
             PublicId = photo.PublicId
         };
     }
-    private PostDto PostToDto(Post post)
+    private PostDto PostToDto(Post post, User user = null)
     {
+        var liked = post.Likes.FirstOrDefault(l => l.UserId == user?.Id);
         return new PostDto
         {
             Id = post.Id,
@@ -148,6 +202,7 @@ public class PostsController : BaseController
             CreatedAt = post.CreatedAt,
             UserId = post.UserId,
             UserName = post.User.Name,
+            PostLiked = liked == null ? false : true,
             LikesCount = post.Likes.Count,
             CommentsCount = post.Comments.Count,
             Photos = post.Photos.Select(p => PhotoToDto(p)).ToList()
