@@ -56,6 +56,7 @@ public class PostsController : BaseController
             .Where(p => p.Id == postId)
             .FirstOrDefaultAsync();
         // If user is authenticated (user != null), check their likes and comments
+        if (post == null) return BadRequest("Post does not exist");
         var postDto = PostToDto(post, user);
         return Ok(postDto);
     }
@@ -202,7 +203,17 @@ public class PostsController : BaseController
             return Ok(new PostDto { Id = post.Id, PostLiked = false });
         return BadRequest("Updating Post Failed");
     }
-    [HttpPost("comment")]
+    [AllowAnonymous]
+    [HttpGet("comments/{postId}")]
+    public async Task<ActionResult> GetComments(Guid postId)
+    {
+        var comments = await _dbContext.Comments
+            .Where(c => c.PostId == postId)
+            .ToListAsync();
+        var commentDtos = comments.Select(c => CommentToDto(c));
+        return Ok(commentDtos);
+    }
+    [HttpPost("comments")]
     public async Task<ActionResult> AddComment(CommentDto commentDto)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
@@ -243,6 +254,7 @@ public class PostsController : BaseController
             Text = comment.Text,
             Time = comment.Time,
             UserName = comment.UserName,
+            UserId = comment.UserId,
             PostId = comment.PostId
         };
     }
@@ -260,8 +272,7 @@ public class PostsController : BaseController
             PostLiked = liked == null ? false : true,
             LikesCount = post.Likes.Count,
             CommentsCount = post.Comments.Count,
-            Photos = post.Photos.Select(p => PhotoToDto(p)).ToList(),
-            Comments = post.Comments.Select(c => CommentToDto(c)).ToList()
+            Photos = post.Photos.Select(p => PhotoToDto(p)).ToList()
         };
     }
 }
