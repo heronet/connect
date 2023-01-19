@@ -209,6 +209,7 @@ public class PostsController : BaseController
     {
         var comments = await _dbContext.Comments
             .Where(c => c.PostId == postId)
+            .OrderByDescending(c => c.Time)
             .ToListAsync();
         var commentDtos = comments.Select(c => CommentToDto(c));
         return Ok(commentDtos);
