@@ -23,6 +23,7 @@ public class PostsController : BaseController
         _dbContext = dbContext;
         _userManager = userManager;
     }
+    // Viewing posts does not require authentication.
     [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult> GetPosts()
@@ -36,8 +37,27 @@ public class PostsController : BaseController
             .Include(p => p.Photos)
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
+        // If user is authenticated (user != null), check their likes
         var postDtos = posts.Select(p => PostToDto(p, user)).ToList();
         return Ok(postDtos);
+    }
+    // Viewing posts does not require authentication.
+    [AllowAnonymous]
+    [HttpGet("{postId}")]
+    public async Task<ActionResult> GetPost(Guid postId)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = await _userManager.FindByIdAsync(userId);
+        var post = await _dbContext.Posts
+            .Include(p => p.User)
+            .Include(p => p.Likes)
+            .Include(p => p.Comments)
+            .Include(p => p.Photos)
+            .Where(p => p.Id == postId)
+            .FirstOrDefaultAsync();
+        // If user is authenticated (user != null), check their likes and comments
+        var postDto = PostToDto(post, user);
+        return Ok(postDto);
     }
     [HttpPost]
     public async Task<ActionResult> AddPost([FromForm] PostDto postDto)
@@ -182,6 +202,30 @@ public class PostsController : BaseController
             return Ok(new PostDto { Id = post.Id, PostLiked = false });
         return BadRequest("Updating Post Failed");
     }
+    [HttpPost("comment")]
+    public async Task<ActionResult> AddComment(CommentDto commentDto)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return Unauthorized("You cannot comment");
+        var post = await _dbContext.Posts
+            .Include(p => p.Comments)
+            .Where(p => p.Id == commentDto.PostId)
+            .FirstOrDefaultAsync();
+        if (post == null) return BadRequest("Post does not exist");
+        var comment = new Comment
+        {
+            Text = commentDto.Text,
+            User = user,
+            Post = post,
+            UserName = user.Name
+        };
+        post.Comments.Add(comment);
+        _dbContext.Posts.Update(post);
+        if (await _dbContext.SaveChangesAsync() > 0)
+            return Ok(CommentToDto(comment));
+        return BadRequest("Failed to comment");
+    }
     private PhotoDto PhotoToDto(Photo photo)
     {
         return new PhotoDto
@@ -189,6 +233,17 @@ public class PostsController : BaseController
             Id = photo.Id,
             ImageUrl = photo.ImageUrl,
             PublicId = photo.PublicId
+        };
+    }
+    private CommentDto CommentToDto(Comment comment)
+    {
+        return new CommentDto
+        {
+            Id = comment.Id,
+            Text = comment.Text,
+            Time = comment.Time,
+            UserName = comment.UserName,
+            PostId = comment.PostId
         };
     }
     private PostDto PostToDto(Post post, User user = null)
@@ -205,7 +260,8 @@ public class PostsController : BaseController
             PostLiked = liked == null ? false : true,
             LikesCount = post.Likes.Count,
             CommentsCount = post.Comments.Count,
-            Photos = post.Photos.Select(p => PhotoToDto(p)).ToList()
+            Photos = post.Photos.Select(p => PhotoToDto(p)).ToList(),
+            Comments = post.Comments.Select(c => CommentToDto(c)).ToList()
         };
     }
 }
