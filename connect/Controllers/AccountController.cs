@@ -35,7 +35,7 @@ public class AccountController : BaseController
     {
         var User = new User
         {
-            UserName = registerDto.Email.ToLower().Trim(),
+            UserName = Guid.NewGuid().ToString(),
             Email = registerDto.Email.ToLower().Trim(),
             Name = registerDto.Name.Trim()
         };
