@@ -26,7 +26,7 @@ public class PostsController : BaseController
     // Viewing posts does not require authentication.
     [AllowAnonymous]
     [HttpGet]
-    public async Task<ActionResult> GetPosts()
+    public async Task<ActionResult> GetPosts(int skip = 0, int take = 20)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var user = await _userManager.FindByIdAsync(userId);
@@ -36,6 +36,8 @@ public class PostsController : BaseController
             .Include(p => p.Comments)
             .Include(p => p.Photos)
             .OrderByDescending(p => p.CreatedAt)
+            .Skip(skip)
+            .Take(take)
             .ToListAsync();
         // If user is authenticated (user != null), check their likes
         var postDtos = posts.Select(p => PostToDto(p, user)).ToList();
