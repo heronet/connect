@@ -32,14 +32,15 @@ public class ChatsController : BaseController
         return Ok(chatDtos);
     }
     [HttpGet("{chatId}")]
-    public async Task<ActionResult> GetChat(Guid chatId)
+    public async Task<ActionResult> GetChat(Guid chatId, int skip = 0, int take = 20)
     {
         var chat = await _dbContext.Chats
             .Where(c => c.Id == chatId)
             .Include(c => c.Users)
-            .Include(c => c.Messages.OrderBy(m => m.Time))
+            .Include(c => c.Messages)
             .FirstOrDefaultAsync();
         if (chat == null) NotFound("Chat does not exists");
+        chat.Messages = chat.Messages.OrderBy(m => m.Time).SkipLast(skip).TakeLast(take).ToList();
         var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
         var user = await _userManager.FindByIdAsync(userId);
         if (!chat.Users.Contains(user))
