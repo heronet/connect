@@ -32,6 +32,7 @@ public class PostsController : BaseController
         var user = await _userManager.FindByIdAsync(userId);
         var posts = await _dbContext.Posts
             .Include(p => p.User)
+            .ThenInclude(u => u.Avatar)
             .Include(p => p.Likes)
             .Include(p => p.Comments)
             .Include(p => p.Photos)
@@ -52,6 +53,7 @@ public class PostsController : BaseController
         var user = await _userManager.FindByIdAsync(userId);
         var post = await _dbContext.Posts
             .Include(p => p.User)
+            .ThenInclude(u => u.Avatar)
             .Include(p => p.Likes)
             .Include(p => p.Comments)
             .Include(p => p.Photos)
@@ -211,6 +213,8 @@ public class PostsController : BaseController
     {
         var comments = await _dbContext.Comments
             .Where(c => c.PostId == postId)
+            .Include(c => c.User)
+            .ThenInclude(u => u.Avatar)
             .OrderByDescending(c => c.Time)
             .ToListAsync();
         var commentDtos = comments.Select(c => CommentToDto(c));
@@ -231,8 +235,7 @@ public class PostsController : BaseController
         {
             Text = commentDto.Text,
             User = user,
-            Post = post,
-            UserName = user.Name
+            Post = post
         };
         post.Comments.Add(comment);
         _dbContext.Posts.Update(post);
@@ -256,7 +259,8 @@ public class PostsController : BaseController
             Id = comment.Id,
             Text = comment.Text,
             Time = comment.Time,
-            UserName = comment.UserName,
+            UserName = comment.User.Name,
+            UserAvatarUrl = comment.User.Avatar.ImageUrl,
             UserId = comment.UserId,
             PostId = comment.PostId
         };
@@ -272,6 +276,7 @@ public class PostsController : BaseController
             CreatedAt = post.CreatedAt,
             UserId = post.UserId,
             UserName = post.User.Name,
+            UserAvatarUrl = post.User.Avatar?.ImageUrl,
             PostLiked = liked == null ? false : true,
             LikesCount = post.Likes.Count,
             CommentsCount = post.Comments.Count,

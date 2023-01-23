@@ -4,6 +4,7 @@ using connect.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace connect.Controllers;
 
@@ -37,7 +38,7 @@ public class AccountController : BaseController
         {
             UserName = Guid.NewGuid().ToString(),
             Email = registerDto.Email.ToLower().Trim(),
-            Name = registerDto.Name.Trim()
+            Name = registerDto.Name.Trim(),
         };
         var result = await _userManager.CreateAsync(User, password: registerDto.Password);
         if (!result.Succeeded) return BadRequest(result);
@@ -58,37 +59,20 @@ public class AccountController : BaseController
     [HttpPost("login")]
     public async Task<ActionResult<UserAuthDto>> LoginUser(LoginDto loginDto)
     {
-        var User = await _userManager.FindByEmailAsync(loginDto.Email.ToLower().Trim());
-
+        var email = loginDto.Email.ToLower().Trim();
+        var user = await _userManager.Users
+            .Include(u => u.Avatar)
+            .Where(u => u.Email == email)
+            .FirstOrDefaultAsync();
         // Return If User was not found
-        if (User == null) return BadRequest("Invalid Email");
-
-        var result = await _signInManager.CheckPasswordSignInAsync(User, password: loginDto.Password, false);
+        if (user == null) return BadRequest("Invalid Email");
+        var result = await _signInManager.CheckPasswordSignInAsync(user, password: loginDto.Password, false);
         if (result.Succeeded)
         {
-            var roles = await _userManager.GetRolesAsync(User);
-            return await UserToDto(User, roles.ToList());
+            var roles = await _userManager.GetRolesAsync(user);
+            return await UserToDto(user, roles.ToList());
         }
-
         return BadRequest("Invalid Password");
-    }
-    /// <summary>
-    /// POST api/account/refresh
-    /// </summary>
-    /// <param name="UserAuthDto"></param>
-    /// <returns><see cref="UserAuthDto" /></returns>
-    [Authorize]
-    [HttpPost("refresh")]
-    public async Task<ActionResult<UserAuthDto>> RefreshToken(UserAuthDto userAuthDto)
-    {
-
-        var User = await _userManager.FindByIdAsync(userAuthDto.Id);
-
-        // Return If User was not found
-        if (User == null) return BadRequest("Invalid User");
-
-        var roles = await _userManager.GetRolesAsync(User);
-        return await UserToDto(User, roles.ToList());
     }
 
     /// <summary>
@@ -97,14 +81,15 @@ public class AccountController : BaseController
     /// </summary>
     /// <param name="User"></param>
     /// <returns><see cref="UserAuthDto" /></returns>
-    private async Task<UserAuthDto> UserToDto(User User, List<string> roles)
+    private async Task<UserAuthDto> UserToDto(User user, List<string> roles)
     {
         return new UserAuthDto
         {
-            Email = User.Email,
-            Token = await _tokenService.GenerateToken(User),
-            Id = User.Id,
-            Roles = roles
+            Email = user.Email,
+            Token = await _tokenService.GenerateToken(user),
+            Id = user.Id,
+            Roles = roles,
+            UserAvatarUrl = user.Avatar?.ImageUrl
         };
     }
 }

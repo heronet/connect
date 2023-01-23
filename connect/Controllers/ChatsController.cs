@@ -37,6 +37,7 @@ public class ChatsController : BaseController
         var chat = await _dbContext.Chats
             .Where(c => c.Id == chatId)
             .Include(c => c.Users)
+            .ThenInclude(u => u.Avatar)
             .Include(c => c.Messages)
             .FirstOrDefaultAsync();
         if (chat == null) NotFound("Chat does not exists");
@@ -48,14 +49,24 @@ public class ChatsController : BaseController
         var chatDto = ChatToDto(chat, userId);
         return Ok(chatDto);
     }
+    private PhotoDto PhotoToDto(Photo photo)
+    {
+        return new PhotoDto
+        {
+            Id = photo.Id,
+            ImageUrl = photo.ImageUrl,
+            PublicId = photo.PublicId
+        };
+    }
 
     private UserDto UserToDto(User user)
     {
         return new UserDto
         {
             Email = user.Email,
-            UserName = user.UserName,
-            Id = user.Id
+            Name = user.Name,
+            Id = user.Id,
+            Avatar = (user.Avatar != null) ? PhotoToDto(user.Avatar) : null
         };
     }
     private MessageDto MessageToDto(Message message)
@@ -82,6 +93,7 @@ public class ChatsController : BaseController
             LastMessageSenderId = chat.LastMessageSenderId,
             LastMessageTime = chat.LastMessageTime,
             Type = chat.Type,
+            AvatarUrl = chat.Users.FirstOrDefault(u => u.Id != userId).Avatar?.ImageUrl,
             Users = chat.Users.Select(u => UserToDto(u)).ToList(),
             Messages = chat.Messages?.Select(m => MessageToDto(m)).ToList()
         };

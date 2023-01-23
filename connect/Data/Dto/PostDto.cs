@@ -11,6 +11,7 @@ public class PostDto
     public DateTime CreatedAt { get; set; }
     public string UserId { get; set; }
     public string UserName { get; set; }
+    public string UserAvatarUrl { get; set; }
     public List<CommentDto> Comments { get; set; }
     public List<IFormFile> UploadPhotos { get; set; } = new List<IFormFile>();
     public List<PhotoDto> Photos { get; set; }

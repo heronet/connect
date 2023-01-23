@@ -17,6 +17,22 @@ public class PhotoService
         var acc = new Account(apiKey: apiKey, apiSecret: apiSecret, cloud: cloudName);
         _cloudinary = new Cloudinary(account: acc);
     }
+    public async Task<ImageUploadResult> AddAvatarAsync(IFormFile file)
+    {
+        int quality = 30;
+        using var stream = file.OpenReadStream();
+        var uploadParams = new ImageUploadParams
+        {
+            File = new FileDescription(file.FileName, stream),
+            Transformation = new Transformation()
+                .Quality(quality)
+                .Gravity("face")
+                .Crop("fill")
+                .Radius("max")
+        };
+        var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+        return uploadResult;
+    }
     public async Task<ImageUploadResult> AddPhotoAsync(IFormFile file)
     {
         int quality = 50;

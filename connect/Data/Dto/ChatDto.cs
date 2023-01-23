@@ -4,6 +4,7 @@ public class ChatDto
 {
     public Guid Id { get; set; }
     public string Title { get; set; }
+    public string AvatarUrl { get; set; }
     public ICollection<UserDto> Users { get; set; }
     public ICollection<MessageDto> Messages { get; set; }
     public string LastMessage { get; set; }
