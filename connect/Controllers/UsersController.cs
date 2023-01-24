@@ -34,10 +34,20 @@ public class UsersController : BaseController
     [HttpGet("{id}")]
     public async Task<ActionResult> GetUser(string id)
     {
+        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
         var user = await _userManager.Users
             .Include(u => u.Avatar)
+            .Include(u => u.Posts)
+                .ThenInclude(p => p.Likes)
+            .Include(u => u.Posts)
+                .ThenInclude(p => p.Comments)
+            .Include(u => u.Posts)
+                .ThenInclude(p => p.Photos)
             .FirstOrDefaultAsync(u => u.Id == id);
-        return Ok(UserToDto(user));
+        var postDtos = user.Posts.Select(p => PostToDto(p, currentUserId));
+        var userDto = UserToDto(user);
+        userDto.Posts = postDtos;
+        return Ok(userDto);
     }
     [HttpGet("connected")]
     public async Task<ActionResult> GetConnectedUsers()
@@ -192,6 +202,24 @@ public class UsersController : BaseController
             CreatedAt = user.CreatedAt,
             LastOnline = user.LastOnline,
             Avatar = (user.Avatar != null) ? PhotoToDto(user.Avatar) : null
+        };
+    }
+    private PostDto PostToDto(Post post, string currentUserId = null)
+    {
+        var liked = post.Likes.FirstOrDefault(l => l.UserId == currentUserId);
+        return new PostDto
+        {
+            Id = post.Id,
+            Title = post.Title,
+            Text = post.Text,
+            CreatedAt = post.CreatedAt,
+            UserId = post.UserId,
+            UserName = post.User.Name,
+            UserAvatarUrl = post.User.Avatar?.ImageUrl,
+            PostLiked = liked == null ? false : true,
+            LikesCount = post.Likes.Count,
+            CommentsCount = post.Comments.Count,
+            Photos = post.Photos.Select(p => PhotoToDto(p)).ToList()
         };
     }
 }

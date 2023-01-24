@@ -10,4 +10,5 @@ public class UserDto
     public DateTime CreatedAt { get; set; }
     public DateTime LastOnline { get; set; }
     public IFormFile UploadAvatar { get; set; }
+    public IEnumerable<PostDto> Posts { get; set; }
 }
