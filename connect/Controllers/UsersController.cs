@@ -31,6 +31,14 @@ public class UsersController : BaseController
         var userDtos = users.Select(u => UserToDto(u)).ToList();
         return Ok(users);
     }
+    [HttpGet("{id}")]
+    public async Task<ActionResult> GetUser(string id)
+    {
+        var user = await _userManager.Users
+            .Include(u => u.Avatar)
+            .FirstOrDefaultAsync(u => u.Id == id);
+        return Ok(UserToDto(user));
+    }
     [HttpGet("connected")]
     public async Task<ActionResult> GetConnectedUsers()
     {
@@ -180,6 +188,9 @@ public class UsersController : BaseController
             Email = user.Email,
             Name = user.Name,
             Id = user.Id,
+            Bio = user.Bio,
+            CreatedAt = user.CreatedAt,
+            LastOnline = user.LastOnline,
             Avatar = (user.Avatar != null) ? PhotoToDto(user.Avatar) : null
         };
     }
