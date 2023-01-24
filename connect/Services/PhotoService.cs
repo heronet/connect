@@ -27,8 +27,14 @@ public class PhotoService
             Transformation = new Transformation()
                 .Quality(quality)
                 .Gravity("face")
-                .Crop("fill")
+                .Height(400)
+                .Width(400)
+                .Crop("crop")
+                .Chain()
                 .Radius("max")
+                .Chain()
+                .Width(200)
+                .Crop("scale")
         };
         var uploadResult = await _cloudinary.UploadAsync(uploadParams);
         return uploadResult;
