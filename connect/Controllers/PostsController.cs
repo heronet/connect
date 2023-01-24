@@ -224,7 +224,9 @@ public class PostsController : BaseController
     public async Task<ActionResult> AddComment(CommentDto commentDto)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await _userManager.Users
+            .Include(u => u.Avatar)
+            .FirstOrDefaultAsync(u => u.Id == userId);
         if (user == null) return Unauthorized("You cannot comment");
         var post = await _dbContext.Posts
             .Include(p => p.Comments)
@@ -260,7 +262,7 @@ public class PostsController : BaseController
             Text = comment.Text,
             Time = comment.Time,
             UserName = comment.User.Name,
-            UserAvatarUrl = comment.User.Avatar.ImageUrl,
+            UserAvatarUrl = comment.User.Avatar?.ImageUrl,
             UserId = comment.UserId,
             PostId = comment.PostId
         };
