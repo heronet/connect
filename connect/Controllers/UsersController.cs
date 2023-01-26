@@ -158,7 +158,7 @@ public class UsersController : BaseController
             .FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return BadRequest("User not found");
         // Photo upload
-        if (userDto.UploadAvatar.Length > 0)
+        if (userDto.UploadAvatar?.Length > 0)
         {
             if (user.Avatar is not null)
             {
@@ -176,6 +176,8 @@ public class UsersController : BaseController
             user.Avatar = newPhoto;
         }
         user.Name = userDto.Name?.Trim() ?? user.Name;
+        user.Bio = userDto.Bio?.Trim() ?? "";
+        user.Location = userDto.Location?.Trim() ?? "";
         var result = await _userManager.UpdateAsync(user);
         if (result.Succeeded)
             return Ok(UserToDto(user));
@@ -199,6 +201,7 @@ public class UsersController : BaseController
             Name = user.Name,
             Id = user.Id,
             Bio = user.Bio,
+            Location = user.Location,
             CreatedAt = user.CreatedAt,
             LastOnline = user.LastOnline,
             Avatar = (user.Avatar != null) ? PhotoToDto(user.Avatar) : null

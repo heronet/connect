@@ -7,6 +7,7 @@ public class UserDto
     public PhotoDto Avatar { get; set; }
     public string Email { get; set; }
     public string Bio { get; set; }
+    public string Location { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime LastOnline { get; set; }
     public IFormFile UploadAvatar { get; set; }
