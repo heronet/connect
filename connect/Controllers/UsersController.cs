@@ -157,27 +157,39 @@ public class UsersController : BaseController
             .Include(u => u.Avatar)
             .FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return BadRequest("User not found");
-        // Photo upload
-        if (userDto.UploadAvatar?.Length > 0)
-        {
-            if (user.Avatar is not null)
-            {
-                var deletionResult = await _photoService.DeletePhotoAsync(user.Avatar.PublicId);
-                user.Avatar = null;
-            }
-            var photoResult = await _photoService.AddAvatarAsync(userDto.UploadAvatar);
-            if (photoResult.Error != null)
-                return BadRequest(photoResult.Error.Message);
-            var newPhoto = new Photo
-            {
-                ImageUrl = photoResult.SecureUrl.AbsoluteUri,
-                PublicId = photoResult.PublicId
-            };
-            user.Avatar = newPhoto;
-        }
         user.Name = userDto.Name?.Trim() ?? user.Name;
         user.Bio = userDto.Bio?.Trim() ?? "";
         user.Location = userDto.Location?.Trim() ?? "";
+        var result = await _userManager.UpdateAsync(user);
+        if (result.Succeeded)
+            return Ok(UserToDto(user));
+        return BadRequest(result.Errors);
+    }
+    [HttpPut("update/avatar")]
+    public async Task<ActionResult> UpdateAvatar([FromForm] UserDto userDto)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        var user = await _userManager.Users
+            .Include(u => u.Avatar)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return BadRequest("User not found");
+        // Photo upload
+        if ((userDto.UploadAvatar?.Length ?? 0) <= 0)
+            return BadRequest("No image");
+        if (user.Avatar is not null)
+        {
+            var deletionResult = await _photoService.DeletePhotoAsync(user.Avatar.PublicId);
+            user.Avatar = null;
+        }
+        var photoResult = await _photoService.AddAvatarAsync(userDto.UploadAvatar);
+        if (photoResult.Error != null)
+            return BadRequest(photoResult.Error.Message);
+        var newPhoto = new Photo
+        {
+            ImageUrl = photoResult.SecureUrl.AbsoluteUri,
+            PublicId = photoResult.PublicId
+        };
+        user.Avatar = newPhoto;
         var result = await _userManager.UpdateAsync(user);
         if (result.Succeeded)
             return Ok(UserToDto(user));
