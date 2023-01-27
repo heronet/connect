@@ -70,7 +70,9 @@ public class PostsController : BaseController
         if (postDto.Text.IsNullOrEmpty() && postDto.UploadPhotos.Count == 0)
             return BadRequest("Post cannot be blank");
         var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await _userManager.Users
+            .Include(u => u.Avatar)
+            .FirstOrDefaultAsync(u => u.Id == userId);
         if (user == null) return BadRequest("User does not exist");
 
         // Photo upload
