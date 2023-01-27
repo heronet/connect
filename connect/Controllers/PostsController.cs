@@ -247,6 +247,18 @@ public class PostsController : BaseController
             return Ok(CommentToDto(comment));
         return BadRequest("Failed to comment");
     }
+    [HttpDelete("comments/{id}")]
+    public async Task<ActionResult> DeleteComment(Guid id)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        var comment = await _dbContext.Comments.FirstOrDefaultAsync(c => c.Id == id);
+        if (comment is null) return NotFound("Comment does not exist");
+        if (comment.UserId != userId) return Unauthorized("You cannot delete this comment");
+        _dbContext.Comments.Remove(comment);
+        if (await _dbContext.SaveChangesAsync() > 0)
+            return Ok();
+        return BadRequest("Failed to delete comment");
+    }
     private PhotoDto PhotoToDto(Photo photo)
     {
         return new PhotoDto
