@@ -26,16 +26,17 @@ public class PostsController : BaseController
     // Viewing posts does not require authentication.
     [AllowAnonymous]
     [HttpGet]
-    public async Task<ActionResult> GetPosts(int skip = 0, int take = 20)
+    public async Task<ActionResult> GetPosts(int skip = 0, int take = 20, [FromQuery] string userId = null)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var user = await _userManager.FindByIdAsync(userId);
+        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = await _userManager.FindByIdAsync(currentUserId);
         var posts = await _dbContext.Posts
             .Include(p => p.User)
             .ThenInclude(u => u.Avatar)
             .Include(p => p.Likes)
             .Include(p => p.Comments)
             .Include(p => p.Photos)
+            .Where(p => userId == null || p.UserId == userId)
             .OrderByDescending(p => p.CreatedAt)
             .Skip(skip)
             .Take(take)
