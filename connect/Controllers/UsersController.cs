@@ -57,7 +57,7 @@ public class UsersController : BaseController
         var chats = await _dbContext.Chats
             .Include(c => c.Users)
             .ThenInclude(u => u.Avatar)
-            .Where(c => c.Users.Contains(user) && c.Users.Count <= 2)
+            .Where(c => c.Type == ChatType.O2O && c.Users.Contains(user))
             .ToListAsync();
         var userDtos = chats
             .Select(c => c.Users.FirstOrDefault(u => u.Id != userId))
@@ -78,7 +78,7 @@ public class UsersController : BaseController
 
         var chat = await _dbContext.Chats
             .Include(c => c.Users)
-            .FirstOrDefaultAsync(c => c.Users.Contains(user) && c.Users.Contains(recipient) && c.Users.Count <= 2);
+            .FirstOrDefaultAsync(c => c.Type == ChatType.O2O && c.Users.Contains(user) && c.Users.Contains(recipient));
         if (chat != null)
             return BadRequest("Connection already exists");
 
@@ -86,6 +86,7 @@ public class UsersController : BaseController
         {
             Messages = new List<Message>(),
             Users = new List<User> { user, recipient },
+            Type = ChatType.O2O,
             Titles = new Dictionary<string, string> { { userId, recipient.Name }, { recipientId, user.Name } }
         };
         _dbContext.Chats.Add(chat);
@@ -138,9 +139,9 @@ public class UsersController : BaseController
 
         var chat = await _dbContext.Chats
             .Include(c => c.Users)
-            .FirstOrDefaultAsync(c => c.Users.Contains(user) && c.Users.Contains(recipient) && c.Users.Count <= 2);
+            .FirstOrDefaultAsync(c => c.Type == ChatType.O2O && c.Users.Contains(user) && c.Users.Contains(recipient));
         if (chat == null)
-            return BadRequest("Connection doesnot exists");
+            return BadRequest("Connection does not exists");
 
         var chatDto = new ChatDto
         {

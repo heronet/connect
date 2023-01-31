@@ -1,5 +1,9 @@
 namespace connect.Models;
-
+public static class ChatType
+{
+    public static string O2O { get; set; } = "One2One";
+    public static string Group { get; set; } = "Group";
+}
 public class Chat
 {
     public Guid Id { get; set; }
