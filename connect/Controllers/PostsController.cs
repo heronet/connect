@@ -248,6 +248,23 @@ public class PostsController : BaseController
             return Ok(CommentToDto(comment));
         return BadRequest("Failed to comment");
     }
+    [HttpPut("comments")]
+    public async Task<ActionResult> EditComment(CommentDto commentDto)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        var user = await _userManager.Users
+            .Include(u => u.Avatar)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null) return Unauthorized("You cannot edit comment");
+        var comment = await _dbContext.Comments.FirstOrDefaultAsync(c => c.Id == commentDto.Id);
+        if (comment is null) return NotFound("Comment does not exist");
+        if (comment.UserId != userId) return Unauthorized("You cannot edit this comment");
+        comment.Text = commentDto.Text;
+        _dbContext.Comments.Update(comment);
+        if (await _dbContext.SaveChangesAsync() > 0)
+            return Ok(CommentToDto(comment));
+        return BadRequest("Failed to edit comment");
+    }
     [HttpDelete("comments/{id}")]
     public async Task<ActionResult> DeleteComment(Guid id)
     {
